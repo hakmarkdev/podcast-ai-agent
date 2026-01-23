@@ -1,0 +1,27 @@
+# Whisper settings
+whisper:
+  model: "base"  # tiny, base, small, medium, large-v3
+  language: "auto"
+  translate: false
+  temperature: 0.0
+
+# Download settings
+download:
+  format: "bestaudio/best"
+  codec: "mp3"
+  socket_timeout: 30
+  retries: 3
+  retry_backoff: 2.0  # Exponential backoff multiplier
+
+# Output settings
+output:
+  directory: "./output"
+  format: "txt"  # txt, srt, json, vtt
+  sanitize_filenames: true
+  on_existing: "skip"  # skip, overwrite, rename
+
+# Logging
+logging:
+  level: "INFO"
+  file: "podcast_summarizer.log"
+  rotation: "10 MB"

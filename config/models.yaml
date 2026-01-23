@@ -1,0 +1,43 @@
+# Whisper model specifications
+models:
+  tiny:
+    ram_required_mb: 200
+    speed: "fastest"
+    accuracy: "lowest"
+    parameters: "39M"
+
+  base:
+    ram_required_mb: 1000
+    speed: "fast"
+    accuracy: "good"
+    parameters: "74M"
+
+  small:
+    ram_required_mb: 2000
+    speed: "medium"
+    accuracy: "better"
+    parameters: "244M"
+
+  medium:
+    ram_required_mb: 5000
+    speed: "slow"
+    accuracy: "high"
+    parameters: "769M"
+
+  large:
+    ram_required_mb: 8000
+    speed: "slowest"
+    accuracy: "highest"
+    parameters: "1550M"
+
+  large-v2:
+    ram_required_mb: 8000
+    speed: "slowest"
+    accuracy: "highest"
+    parameters: "1550M"
+
+  large-v3:
+    ram_required_mb: 8000
+    speed: "slowest"
+    accuracy: "highest"
+    parameters: "1550M"
