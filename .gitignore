@@ -31,3 +31,9 @@ output/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Distribution / Packaging
+*.egg-info/
+.eggs/
+dist/
+build/

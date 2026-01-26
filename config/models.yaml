@@ -1,4 +1,3 @@
-# Whisper model specifications
 models:
   tiny:
     ram_required_mb: 200
