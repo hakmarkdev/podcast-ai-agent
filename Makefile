@@ -29,4 +29,7 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 run:
-	uv run python -m src
+	uv run podcast-ai-agent --help
+
+build:
+	uv build
