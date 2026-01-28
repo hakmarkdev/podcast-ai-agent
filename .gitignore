@@ -7,6 +7,10 @@ __pycache__/
 .venv/
 venv/
 ENV/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
 
 # Output
 output/
