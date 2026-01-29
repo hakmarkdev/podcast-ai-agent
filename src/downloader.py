@@ -5,7 +5,7 @@ from time import sleep
 import yt_dlp
 
 from .config import DownloadConfig
-from .utils import sanitize_filename
+from .utils import check_disk_space, sanitize_filename
 
 logger = logging.getLogger("podcast_ai_agent")
 
@@ -22,11 +22,18 @@ class NetworkTimeoutError(DownloadError):
     """Raised when network times out"""
 
 
+class DiskSpaceError(DownloadError):
+    """Raised when insufficient disk space"""
+
+
 def download_audio(
     url: str,
     output_dir: Path,
     config: DownloadConfig,
 ) -> Path:
+    if not check_disk_space(output_dir, 0.1):
+        raise DiskSpaceError(f"Insufficient disk space in {output_dir}")
+
     output_dir.mkdir(parents=True, exist_ok=True)
     ydl_opts = {
         "format": config.format,

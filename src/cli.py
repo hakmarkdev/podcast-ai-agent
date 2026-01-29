@@ -9,9 +9,9 @@ from rich.logging import RichHandler
 from typing_extensions import Annotated
 
 from .config import Config, DownloadConfig, OutputConfig, WhisperConfig
-from .downloader import DownloadError, download_audio
+from .downloader import DiskSpaceError, DownloadError, download_audio
 from .logger import setup_logging
-from .output import save_transcription
+from .output import OutputWriter
 from .transcriber import Transcriber, TranscriptionError
 from .utils import check_ffmpeg, sanitize_filename
 
@@ -144,15 +144,28 @@ def process(
                 transcriber = Transcriber(config.whisper)
                 result = transcriber.transcribe(audio_path)
 
-            output_file = config.output.directory / f"{audio_path.stem}.{config.output.format}"
-            save_transcription(result, output_file, config.output.format)
+            writer = OutputWriter(config.output.directory / audio_path.stem)
+            if config.output.format == "txt":
+                output_path = writer.write_txt(result["text"])
+            elif config.output.format == "json":
+                output_path = writer.write_json(result)
+            elif config.output.format == "srt":
+                output_path = writer.write_srt(result["segments"])
+            elif config.output.format == "vtt":
+                output_path = writer.write_vtt(result["segments"])
+            else:
+                raise ValueError(f"Unsupported format: {config.output.format}")
 
             console.print(
-                f"[green bold]Success![/green bold] Saved to: [underline]{output_file}[/underline]"
+                f"[green bold]Success![/green bold] Saved to: [underline]{output_path}[/underline]"
             )
             logger.info(f"Successfully processed {current_url}")
             success_count += 1
 
+        except DiskSpaceError as e:
+            console.print(f"[red]Disk Space Error:[/red] {e}")
+            logger.error(f"Disk space error for {current_url}: {e}")
+            fail_count += 1
         except DownloadError as e:
             console.print(f"[red]Download Failed:[/red] {e}")
             logger.error(f"Download failed for {current_url}: {e}")

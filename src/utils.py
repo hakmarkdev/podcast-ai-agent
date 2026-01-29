@@ -46,3 +46,13 @@ def validate_audio_file(path: Path) -> bool:
         return len(audio) > 0
     except Exception:
         return False
+
+
+def check_disk_space(path: Path, required_gb: float) -> bool:
+    try:
+        usage = shutil.disk_usage(path)
+        free_gb = usage.free / (1024**3)
+        return free_gb >= required_gb
+    except Exception:
+        return True
+
