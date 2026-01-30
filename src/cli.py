@@ -144,7 +144,14 @@ def process(
                 transcriber = Transcriber(config.whisper)
                 result = transcriber.transcribe(audio_path)
 
-            writer = OutputWriter(config.output.directory / audio_path.stem)
+            metadata = {
+                "url": current_url,
+                "model": config.whisper.model,
+                "language": config.whisper.language,
+                "translate": config.whisper.translate,
+            }
+
+            writer = OutputWriter(config.output.directory / audio_path.stem, metadata=metadata)
             if config.output.format == "txt":
                 output_path = writer.write_txt(result["text"])
             elif config.output.format == "json":
