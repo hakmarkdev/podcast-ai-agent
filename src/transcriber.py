@@ -67,7 +67,23 @@ class Transcriber:
             kwargs["task"] = "translate"
 
         try:
-            result = model.transcribe(str(audio_path), **kwargs)
+            import warnings
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+
+                result = model.transcribe(str(audio_path), **kwargs)
+
+                for warning in w:
+                    if "FP16 is not supported on CPU" in str(warning.message):
+                        logger.warning(f"Whisper Warning: {warning.message}")
+                    else:
+                        warnings.warn_explicit(
+                            warning.message,
+                            warning.category,
+                            warning.filename,
+                            warning.lineno,
+                        )
+
             return result
         except Exception as e:
             raise TranscriptionError(f"Transcription failed: {e}")

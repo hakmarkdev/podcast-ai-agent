@@ -1,19 +1,16 @@
-import logging
-import sys
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.logging import RichHandler
 from typing_extensions import Annotated
 
-from .config import Config, DownloadConfig, OutputConfig, WhisperConfig
+from .config import Config
 from .downloader import DiskSpaceError, DownloadError, download_audio
 from .logger import setup_logging
 from .output import OutputWriter
 from .transcriber import Transcriber, TranscriptionError
-from .utils import check_ffmpeg, sanitize_filename
+from .utils import check_ffmpeg
 
 app = typer.Typer(
     name="podcast-ai-agent",
@@ -37,6 +34,13 @@ def common(
     ),
 ):
     pass
+
+@app.command()
+def tui():
+    from .tui import PodcastAgentApp
+    app = PodcastAgentApp()
+    app.run()
+
 
 
 @app.command()
@@ -129,9 +133,39 @@ def process(
 
         try:
             if not skip_download:
-                with console.status("Downloading...", spinner="dots"):
+                from rich.progress import (
+                    BarColumn,
+                    Progress,
+                    SpinnerColumn,
+                    TaskProgressColumn,
+                    TextColumn,
+                    TimeRemainingColumn,
+                )
+                
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TimeRemainingColumn(),
+                    console=console,
+                    transient=True,
+                ) as progress:
+                    download_task = progress.add_task("Downloading...", total=None)
+
+                    def update_progress(d):
+                        if d["status"] == "downloading":
+                            total = d.get("total_bytes") or d.get("total_bytes_estimate")
+                            downloaded = d.get("downloaded_bytes", 0)
+                            progress.update(download_task, total=total, completed=downloaded)
+                            if total and total > 0:
+                                pct = int((downloaded / total) * 100)
+                                progress.update(download_task, description=f"Downloading... {pct}%")
+                        elif d["status"] == "finished":
+                            progress.update(download_task, description="Processing audio...", completed=d.get("total_bytes"))
+
                     audio_path = download_audio(
-                        current_url, config.output.directory, config.download
+                        current_url, config.output.directory, config.download, progress_hook=update_progress
                     )
                 console.print(f"[green]Downloaded:[/green] {audio_path.name}")
             else:
@@ -140,8 +174,9 @@ def process(
                         current_url, config.output.directory, config.download
                     )
 
-            with console.status(f"Transcribing ({config.whisper.model})...", spinner="dots"):
-                transcriber = Transcriber(config.whisper)
+
+            transcriber = Transcriber(config.whisper)
+            with console.status("Transcribing...", spinner="dots"):
                 result = transcriber.transcribe(audio_path)
 
             metadata = {

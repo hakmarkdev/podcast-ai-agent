@@ -41,3 +41,4 @@ htmlcov/
 .eggs/
 dist/
 build/
+podcast_ai_agent.log

@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -32,7 +32,7 @@ class OutputWriter:
             end = self._format_timestamp(seg["end"])
             text = seg["text"].strip().replace("\n", " ")
             lines.append(f"{i}\n{start} --> {end}\n{text}\n")
-        
+
         path.write_text("\n".join(lines), encoding="utf-8")
         return path
 
@@ -44,7 +44,7 @@ class OutputWriter:
             end = self._format_timestamp(seg["end"], vtt=True)
             text = seg["text"].strip().replace("\n", " ")
             lines.append(f"\n{start} --> {end}\n{text}")
-        
+
         path.write_text("\n".join(lines), encoding="utf-8")
         return path
 
@@ -56,7 +56,9 @@ class OutputWriter:
 
         counter = 1
         while path.exists():
-            path = self.base_path.with_name(f"{self.base_path.stem}_{counter}").with_suffix(f".{ext}")
+            path = self.base_path.with_name(f"{self.base_path.stem}_{counter}").with_suffix(
+                f".{ext}"
+            )
             counter += 1
 
         return path

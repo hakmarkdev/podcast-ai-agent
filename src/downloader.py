@@ -26,15 +26,35 @@ class DiskSpaceError(DownloadError):
     """Raised when insufficient disk space"""
 
 
+class YtDlpLogger:
+    def debug(self, msg):
+        if msg.startswith('[debug] '):
+            logger.debug(msg)
+        else:
+            logger.debug(msg)
+
+    def info(self, msg):
+        if not msg.startswith('[download] '):
+             logger.debug(msg)
+
+    def warning(self, msg):
+        logger.warning(msg)
+
+    def error(self, msg):
+        logger.error(msg)
+
+
 def download_audio(
     url: str,
     output_dir: Path,
     config: DownloadConfig,
+    progress_hook=None,
 ) -> Path:
     if not check_disk_space(output_dir, 0.1):
         raise DiskSpaceError(f"Insufficient disk space in {output_dir}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    
     ydl_opts = {
         "format": config.format,
         "postprocessors": [
@@ -43,12 +63,22 @@ def download_audio(
                 "preferredcodec": config.codec,
             }
         ],
-        "outtmpl": str(output_dir / "%(title)s.%(ext)s"),
         "socket_timeout": config.socket_timeout,
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
+        "logger": YtDlpLogger(),
     }
+
+    import shutil
+    if shutil.which("deno"):
+        pass
+    elif shutil.which("node"):
+        ydl_opts["js_runtimes"] = {"node": {}}
+        ydl_opts["remote_components"] = {"ejs:github"}
+
+    if progress_hook:
+        ydl_opts["progress_hooks"] = [progress_hook]
 
     retry_count = 0
     backoff = config.retry_backoff
@@ -57,14 +87,21 @@ def download_audio(
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
-                title = info.get("title", "audio")
-                sanitized_title = sanitize_filename(title)
-                output_path = output_dir / f"{sanitized_title}.{config.codec}"
+                video_id = info.get("id", "unknown_id")
+
+                if video_id == "unknown_id":
+                     title = info.get("title", "audio")
+                     filename_base = sanitize_filename(title)
+                else:
+                     filename_base = sanitize_filename(video_id)
+
+                output_path = output_dir / f"{filename_base}.{config.codec}"
+                
                 if output_path.exists():
                     logger.info(f"File already exists: {output_path}")
                     return output_path
 
-                ydl_opts["outtmpl"] = str(output_dir / f"{sanitized_title}.%(ext)s")
+                ydl_opts["outtmpl"] = str(output_dir / f"{filename_base}.%(ext)s")
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl_final:
                     ydl_final.download([url])

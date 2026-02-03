@@ -55,4 +55,3 @@ def check_disk_space(path: Path, required_gb: float) -> bool:
         return free_gb >= required_gb
     except Exception:
         return True
-
